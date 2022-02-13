@@ -1,4 +1,14 @@
 ﻿@using Core.DTOs
+
+@{
+    hours = (int)((DateTime.UtcNow - Highlight.MatchStartTimeUTC).TotalHours);
+
+        if (hours > 24)
+        {
+            days = hours / 24;
+        }
+}
+
 <div class="col-md-4">
                         <div class="card p-3 mb-2">
                             <div class="d-flex justify-content-between">
@@ -72,15 +82,4 @@
     double timeSpentDead = 0;
     int hours = 0;
     int days = 0;
-
-
-    protected override async Task OnInitializedAsync()
-    {
-        hours = (int)((DateTime.UtcNow - Highlight.MatchStartTimeUTC).TotalHours);
-
-        if (hours > 24)
-        {
-            days = hours / 24;
-        }
-    }
 }
