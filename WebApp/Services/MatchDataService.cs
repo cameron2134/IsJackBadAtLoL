@@ -30,16 +30,16 @@ namespace WebApp.Services
             var summoner = await _context.Summoners.FirstOrDefaultAsync(o => o.ID == summonerID);
 
             var fullMatchHistory = await _context.MatchDatas
+                .OrderByDescending(o => o.MatchStartTimeUTC)
                 .Where(o => o.SummonerID == summonerID)
                 .Take(numRecsToLoad)
-                .OrderByDescending(o => o.MatchStartTimeUTC)
                 .AsNoTracking()
                 .ToListAsync();
 
             var oneWeek = DateTime.UtcNow.AddDays(-7);
             var topWorstGames = await _context.MatchDatas
-                .Where(o => o.MatchStartTimeUTC > oneWeek && o.Deaths > o.Kills && o.SummonerID == summonerID)
                 .OrderByDescending(o => o.Deaths)
+                .Where(o => o.MatchStartTimeUTC > oneWeek && o.Deaths > o.Kills && o.SummonerID == summonerID)
                 .Take(3)
                 .AsNoTracking()
                 .ToListAsync();
