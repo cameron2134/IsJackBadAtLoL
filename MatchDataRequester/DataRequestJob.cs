@@ -122,7 +122,7 @@ namespace MatchDataRequester
 
         private async Task<Tuple<int, TimeSpan>> ProcessMatchHistory(string matchID, Summoner summoner)
         {
-            if (DoesMatchExist(matchID))
+            if (DoesMatchExist(matchID, summoner.ID))
                 return null;
 
             var fullLeagueMatch = await SendAPIRequest<LeagueMatchData>(FunctionConfigHelper.GetSetting("MatchDataEndpoint") + matchID, "X-Riot-Token", HttpMethod.Get);
@@ -147,9 +147,9 @@ namespace MatchDataRequester
             return new Tuple<int, TimeSpan>(matchData.Deaths, matchData.TimeSpentDead);
         }
 
-        private bool DoesMatchExist(string matchID)
+        private bool DoesMatchExist(string matchID, int summonerID)
         {
-            return _context.MatchDatas.FirstOrDefault(o => o.LeagueMatchID == matchID) != null;
+            return _context.MatchDatas.FirstOrDefault(o => o.LeagueMatchID == matchID && o.SummonerID == summonerID) != null;
         }
 
         private DateTime GetDateTimeFromInt(long time)
