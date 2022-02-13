@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Core.DMs;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,6 +10,7 @@ namespace Core
     public class MatchData
     {
         public int ID { get; set; }
+        public int SummonerID { get; set; }
         public string LeagueMatchID { get; set; }
         public string Champion { get; set; }
         public string GameMode { get; set; }
@@ -24,5 +26,6 @@ namespace Core
         public TimeSpan MatchLength { get; set; }
 
         public virtual ICollection<MatchDataComment> MatchDataComments { get; set; }
+        public virtual Summoner Summoner { get; set; }
     }
 }

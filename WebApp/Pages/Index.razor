@@ -1,109 +1,51 @@
 ﻿@page "/"
 
 
-<PageTitle>Is Jack bad at LoL?</PageTitle>
+<PageTitle>League of Feeders</PageTitle>
 
 @using Core.DTOs
+@using WebApp.Components
 @using WebApp.Services
 @inject MatchDataService _matchDataService
 
-
-
 @if (_matchData == null)
 {
-    <p><em>Data for our glorious plebian, Jack, is being loaded...</em></p>
+    <p><em>Data is loading...</em></p>
 }
 else
 {
     <div id="div-center">
-    <h1>Is Jack bad at LoL?</h1>
+
+       <div class="dropdown" style="margin-bottom: 25px;">
+          <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+            Pick a feeder!
+          </button>
+          <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                @foreach (var summoner in _summoners)
+                {
+                    <li><a class="dropdown-item" href="#" @onclick="() => LoadSummonerData(summoner.ID)">@summoner.Nickname</a></li>
+                }
+          </ul>
+        </div>
+
+    <h1>Is @_matchData.Nickname bad at LoL?</h1>
 
     <p>Based on the past <b><span style="font-size:26px;">@_matchData.Statistics.TotalMatchesTracked</span></b> matches...</p>
-    <p>Jack has <span style="font-size:26px;">died</span> a total of <span class="redTxt" style="font-size: 26px;">@_matchData.Statistics.TotalDeaths</span> times...</p>
+    <p>@_matchData.Nickname has <span style="font-size:26px;">died</span> a total of <span class="redTxt" style="font-size: 26px;">@_matchData.Statistics.TotalDeaths</span> times...</p>
     <p>...and spent a total of <span class="redTxt" style="font-size:26px;">@_matchData.Statistics.TotalTimeSpentDead.Hours hours and @_matchData.Statistics.TotalTimeSpentDead.Minutes minutes</span>  dead...</p>
 
         <hr style="width: 35%; margin: auto" />
+
 </div>
         <div class="container mt-5 mb-3">
 
             <div class="row">
             <h2>Highlight Reel</h2>
-            <h5>Jack's worst matches for the past week</h5>
+            <h5>@_matchData.Nickname's worst matches for the past week</h5>
 
-            <!-- TODO: Make a component for this card -->
             @foreach (var highlight in _matchData.Highlights)
             {
-                    // todo: make this stuff into a function or something
-                    double timeSpentDead = 0;
-                    int hours = (int)((DateTime.UtcNow - highlight.MatchStartTimeUTC).TotalHours);
-                    int days = 0;
-                    @if (hours > 24)
-                    {
-                        days = hours / 24;
-                    }
-
-                <div class="col-md-4">
-                        <div class="card p-3 mb-2">
-                            <div class="d-flex justify-content-between">
-                                <div class="d-flex flex-row align-items-center">
-                                    @*<div class="icon"> <i class="bx bxl-mailchimp"></i> </div>*@
-                                    <div class="ms-2 c-details">
-                                        <h4 class="mb-0">@highlight.Champion</h4> 
-
-                                        @if (days > 0)
-                                        {
-                                            <span id="daysAgo">@highlight.GameMode - @days days ago</span>
-                                        }
-                                        else
-                                        {
-                                            <span id="daysAgo">@highlight.GameMode - @hours hours ago</span>
-                                        }
-                                    </div>
-                                </div>
-                                    @if (highlight.Victory)
-                                    {
-                                        <div class="badge badge-win"> 
-                                            <span>Win</span>
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <div class="badge badge-lose"> 
-                                            <span>Loss</span>
-                                        </div>
-                                    }
-                            </div>
-                            <div class="mt-5">
-                                <h3 class="heading">Kills: @highlight.Kills<br>Deaths: @highlight.Deaths<br />Assists: @highlight.Assists</h3>
-                                <div class="mt-5">
-
-                                
-                                    <div class="mt-3"><span class="text2">Jack spent </span>
-                                    
-                                        <span class="text1">
-                                            @if (highlight.TimeSpentDead.Minutes > 0)
-                                            {
-                                                timeSpentDead = highlight.TimeSpentDead.Minutes;
-                                                @highlight.TimeSpentDead.Minutes;
-                                                <span> minutes</span>
-                                            }
-
-                                            else
-                                            {
-                                                timeSpentDead = ((double)highlight.TimeSpentDead.Seconds / 60);
-                                                @highlight.TimeSpentDead.Seconds;
-                                                <span> seconds</span>
-                                            }
-                                            dead<span class="text2"> in a @highlight.MatchLength.Minutes minute match</span></span> 
-                                        </div>
-                                </div>
-
-                                    <div class="progress">
-                                        <div class="progress-bar" role="progressbar" style="width: @((timeSpentDead * 100) / highlight.MatchLength.Minutes)%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                            </div>
-                        </div>
-                    </div>
+                <MatchCard SummonerName = "@_matchData.Nickname" Highlight = "highlight"/>
             }
             </div>
         </div>
@@ -117,77 +59,7 @@ else
 
             @foreach (var match in _matchData.MatchHistory) 
             {
-                double timeSpentDead = 0;
-                int hours = (int)((DateTime.UtcNow - match.MatchStartTimeUTC).TotalHours);
-                int days = 0;
-                @if (hours > 24)
-                {
-                    days = hours / 24;
-                }
-
-                <!-- Highlight the entire card a very slight green, red, or yellow based on how good or bad he did -->
-                <div class="col-md-4" style="margin-bottom:15px">
-                    <div class="card p-3 mb-2">
-                        <div class="d-flex justify-content-between">
-                            <div class="d-flex flex-row align-items-center">
-                                @*<div class="icon"> <i class="bx bxl-mailchimp"></i> </div>*@
-                                <div class="ms-2 c-details">
-                                    <h4 class="mb-0">@match.Champion</h4> 
-
-                                    @if (days > 0)
-                                    {
-                                        <span id="daysAgo">@match.GameMode - @days days ago</span>
-                                    }
-                                    else
-                                    {
-                                        <span id="daysAgo">@match.GameMode - @hours hours ago</span>
-                                    }
-                                </div>
-                            </div>
-                                @if (match.Victory)
-                                {
-                                    <div class="badge badge-win"> 
-                                        <span>Win</span>
-                                    </div>
-                                }
-                                else
-                                {
-                                    <div class="badge badge-lose"> 
-                                        <span>Loss</span>
-                                    </div>
-                                }
-                        </div>
-                        <div class="mt-5">
-                            <h3 class="heading">Kills: @match.Kills<br>Deaths: @match.Deaths<br />Assists: @match.Assists</h3>
-                            <div class="mt-5">
-
-                                
-                                <div class="mt-3"><span class="text2">Jack spent </span>
-                                    
-                                    <span class="text1">
-                                        @if (match.TimeSpentDead.Minutes > 0)
-                                        {
-                                            timeSpentDead = match.TimeSpentDead.Minutes;
-                                            @match.TimeSpentDead.Minutes;
-                                            <span> minutes</span>
-                                        }
-
-                                        else
-                                        {
-                                            timeSpentDead = ((double)match.TimeSpentDead.Seconds / 60);
-                                            @match.TimeSpentDead.Seconds;
-                                            <span> seconds</span>
-                                        }
-                                        dead<span class="text2"> in a @match.MatchLength.Minutes minute match</span></span> 
-                                    </div>
-                            </div>
-
-                                <div class="progress">
-                                    <div class="progress-bar" role="progressbar" style="width: @((timeSpentDead * 100) / match.MatchLength.Minutes)%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                        </div>
-                    </div>
-                </div>
+                <MatchCard SummonerName = "@_matchData.Nickname" Highlight = "match"/>
             }
     
         <button @onclick="LoadFewerMatches" class="btn btn-primary">Load Fewer</button>
@@ -199,18 +71,27 @@ else
 }
 
 @code {
+    private IEnumerable<SummonerDTO> _summoners;
     private JackMatchesDTO _matchData;
     private int _currentMatchCount = 9;
+    private int _currentSummonerID = 1;
 
     protected override async Task OnInitializedAsync()
     {
-        _matchData = await _matchDataService.GetMatchHistory();
+        _summoners = await _matchDataService.GetSummoners();
+        _matchData = await _matchDataService.GetMatchHistory(_currentSummonerID);
+    }
+
+    private async Task LoadSummonerData(int summonerID)
+    {
+        _currentSummonerID = summonerID;
+        _matchData = await _matchDataService.GetMatchHistory(_currentSummonerID, _currentMatchCount);
     }
 
     private async Task LoadMoreMatches()
     {
         _currentMatchCount += 9;
-        _matchData = await _matchDataService.GetMatchHistory(_currentMatchCount);
+        _matchData = await _matchDataService.GetMatchHistory(_currentSummonerID, _currentMatchCount);
     }
 
     private async Task LoadFewerMatches()
@@ -219,6 +100,6 @@ else
             return;
 
         _currentMatchCount -= 9;
-        _matchData = await _matchDataService.GetMatchHistory(_currentMatchCount);
+        _matchData = await _matchDataService.GetMatchHistory(_currentSummonerID, _currentMatchCount);
     }
 }

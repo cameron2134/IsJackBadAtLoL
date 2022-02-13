@@ -17,6 +17,8 @@ namespace WebApp
 
             CreateMap<GlobalStatistics, GlobalStatisticsDTO>()
                 .ReverseMap();
+
+            CreateMap<Summoner, SummonerDTO>();
         }
     }
 }
