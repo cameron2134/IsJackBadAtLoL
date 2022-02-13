@@ -100,6 +100,6 @@ else
             return;
 
         _currentMatchCount -= 9;
-        _matchData = await _matchDataService.GetMatchHistory(_currentMatchCount, _currentSummonerID);
+        _matchData = await _matchDataService.GetMatchHistory(_currentSummonerID, _currentMatchCount);
     }
 }
