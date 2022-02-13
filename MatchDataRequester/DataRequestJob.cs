@@ -59,7 +59,7 @@ namespace MatchDataRequester
         {
             try
             {
-                var recentMatches = await SendAPIRequest<IEnumerable<string>>($"{FunctionConfigHelper.GetSetting("MatchHistoryEndpoint")}{summoner.PUUID}/ids?start=0&count=25", "X-Riot-Token", HttpMethod.Get);
+                var recentMatches = await SendAPIRequest<IEnumerable<string>>($"{FunctionConfigHelper.GetSetting("MatchHistoryEndpoint")}{summoner.PUUID}/ids?start=0&count=9", "X-Riot-Token", HttpMethod.Get);
                 foreach (var matchID in recentMatches)
                 {
                     var deathData = await ProcessMatchHistory(matchID, summoner);
