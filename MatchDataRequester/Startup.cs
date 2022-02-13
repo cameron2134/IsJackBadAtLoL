@@ -2,9 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Repo;
-using System;
 
 [assembly: FunctionsStartup(typeof(MatchDataRequester.Startup))]
+
 namespace MatchDataRequester
 {
     public class Startup : FunctionsStartup

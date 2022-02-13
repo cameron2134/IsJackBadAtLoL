@@ -11,6 +11,7 @@ namespace Repo
         public DbSet<MatchData> MatchDatas { get; set; }
         public DbSet<MatchDataComment> MotionActivities { get; set; }
         public DbSet<GlobalStatistics> GlobalStatistics { get; set; }
+        public DbSet<Summoner> Summoners { get; set; }
 
         public LolContext(DbContextOptions<LolContext> options)
             : base(options)
@@ -30,6 +31,11 @@ namespace Repo
                 entity.ToTable("MatchData", "dbo");
                 entity.HasKey(o => o.ID);
                 entity.Property(o => o.ID).UseIdentityColumn();
+
+                entity.HasOne(m => m.Summoner)
+                .WithMany(d => d.MatchDatas)
+                .HasForeignKey(f => f.SummonerID)
+                .HasConstraintName("FK_MatchData_Summoner");
             });
 
             modelBuilder.Entity<MatchDataComment>(entity =>
@@ -46,6 +52,18 @@ namespace Repo
             modelBuilder.Entity<GlobalStatistics>(entity =>
             {
                 entity.ToTable("GlobalStatistics", "dbo");
+                entity.HasKey(o => o.ID);
+                entity.Property(o => o.ID).UseIdentityColumn();
+
+                entity.HasOne(m => m.Summoner)
+                .WithMany(d => d.GlobalStatistics)
+                .HasForeignKey(f => f.SummonerID)
+                .HasConstraintName("FK_GlobalStatistics_Summoner");
+            });
+
+            modelBuilder.Entity<Summoner>(entity =>
+            {
+                entity.ToTable("Summoner", "dbo");
                 entity.HasKey(o => o.ID);
                 entity.Property(o => o.ID).UseIdentityColumn();
             });

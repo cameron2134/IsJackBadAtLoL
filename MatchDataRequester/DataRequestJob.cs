@@ -18,106 +18,133 @@ namespace MatchDataRequester
         private readonly HttpClient _httpClient;
         private readonly LolContext _context;
         private readonly string _apiKey;
+        private readonly ILogger<DataRequestJob> _log;
 
-        public DataRequestJob(HttpClient httpClient, LolContext lolContext)
+        public DataRequestJob(HttpClient httpClient, LolContext lolContext, ILogger<DataRequestJob> log)
         {
             _httpClient = httpClient;
             _context = lolContext;
+            _log = log;
 
             _apiKey = FunctionConfigHelper.GetSetting("LeagueApiKey");
         }
 
         [FunctionName("DataRequestJob")]
-        public async Task Run([TimerTrigger("%CronSchedule%")] TimerInfo myTimer, ILogger log)
+        public async Task Run([TimerTrigger("%CronSchedule%", RunOnStartup = true)] TimerInfo myTimer)
         {
-            log.LogInformation($"DataRequestJob started at: {DateTime.Now}");
+            _log.LogInformation($"DataRequestJob started at: {DateTime.Now}");
 
-            var jackPuuid = FunctionConfigHelper.GetSetting("JackPuuid");
+            await UpdateSummoners();
 
-            int totalDeaths = 0;
-            int numMatchesProcessoed = 0;
-            TimeSpan totalTimeSpentDead = new TimeSpan();
-            bool dataChanged = false;
-
-            var recentMatches = await GetMatchHistory();
-            foreach (var matchID in recentMatches)
+            var allSummoners = await GetSummoners();
+            foreach (var summoner in allSummoners)
             {
-                try
+                var summonerStatistics = await _context.GlobalStatistics.FirstOrDefaultAsync(o => o.SummonerID == summoner.ID);
+                if (summonerStatistics == null)
                 {
-                    var deathData = await ProcessMatchHistory(matchID, jackPuuid);
+                    summonerStatistics = new GlobalStatistics { SummonerID = summoner.ID };
+                    _context.GlobalStatistics.Add(summonerStatistics);
+                }
+                else
+                    _context.GlobalStatistics.Update(summonerStatistics);
+
+                summonerStatistics = await GetDataForSummoner(summoner, summonerStatistics);
+            }
+
+            var recsChanged = await _context.SaveChangesAsync();
+            _log.LogInformation($"Saved {recsChanged} records.");
+        }
+
+        private async Task<GlobalStatistics> GetDataForSummoner(Summoner summoner, GlobalStatistics summonerStatistics)
+        {
+            try
+            {
+                var recentMatches = await SendAPIRequest<IEnumerable<string>>($"{FunctionConfigHelper.GetSetting("MatchHistoryEndpoint")}{summoner.PUUID}/ids?start=0&count=5", "X-Riot-Token", HttpMethod.Get);
+                foreach (var matchID in recentMatches)
+                {
+                    var deathData = await ProcessMatchHistory(matchID, summoner);
                     if (deathData == null)
                         continue;
 
-                    dataChanged = true;
-                    numMatchesProcessoed++;
-                    totalDeaths += deathData.Item1;
-                    totalTimeSpentDead += deathData.Item2;
+                    summonerStatistics.TotalMatchesTracked++;
+                    summonerStatistics.TotalDeaths += deathData.Item1;
+                    summonerStatistics.TotalTimeSpentDead += deathData.Item2;
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.LogError($"Unable to process match history for {summoner.PUUID}: {ex.Message}, {ex.StackTrace}");
+            }
+
+            return summonerStatistics;
+        }
+
+        private async Task UpdateSummoners()
+        {
+            var summonersNoPuuid = await _context.Summoners
+                .Where(o => o.Active && string.IsNullOrWhiteSpace(o.PUUID))
+                .ToListAsync();
+
+            if (!summonersNoPuuid.Any())
+            {
+                _log.LogInformation("No new summoners have been added that require a PUUID.");
+                return;
+            }
+
+            foreach (var summoner in summonersNoPuuid)
+            {
+                _log.LogInformation($"Obtaining PUUID for {summoner.Name}");
+
+                try
+                {
+                    var leagueSummoner = await SendAPIRequest<LeagueSummoner>(FunctionConfigHelper.GetSetting("SummonerNameEndpoint") + summoner.Name, "X-Riot-Token", HttpMethod.Get);
+                    summoner.PUUID = leagueSummoner.puuid;
                 }
                 catch (Exception ex)
                 {
-                    log.LogError($"Could not process match {matchID}: {ex.Message}, {ex.StackTrace}");
+                    _log.LogError($"Failed to obtain PUUID for summoner name {summoner.Name}: {ex.Message}, {ex.StackTrace}");
                 }
             }
 
-            if (dataChanged)
-            {
-                await UpdateGlobalStatistics(totalDeaths, totalTimeSpentDead, numMatchesProcessoed);
-
-                var numAdded = await _context.SaveChangesAsync();
-                log.LogInformation($"Saved {numAdded} new records.");
-            }
-            else
-            {
-                log.LogInformation($"No data to save.");
-            }
+            var summonersUpdated = await _context.SaveChangesAsync();
+            _log.LogInformation($"Updated {summonersUpdated} summoner records.");
         }
 
-        private async Task<Tuple<int, TimeSpan>> ProcessMatchHistory(string matchID, string jackPuuid)
+        private async Task<IEnumerable<Summoner>> GetSummoners()
+        {
+            var allSummoners = await _context.Summoners
+                .Where(o => o.Active)
+                .AsNoTracking()
+                .ToListAsync();
+
+            return allSummoners;
+        }
+
+        private async Task<Tuple<int, TimeSpan>> ProcessMatchHistory(string matchID, Summoner summoner)
         {
             if (DoesMatchExist(matchID))
                 return null;
 
-            var matchData = await GetMatchData(matchID);
-            var jack = matchData.info.participants.FirstOrDefault(o => o.puuid == jackPuuid);
+            var fullLeagueMatch = await SendAPIRequest<LeagueMatchData>(FunctionConfigHelper.GetSetting("MatchDataEndpoint") + matchID, "X-Riot-Token", HttpMethod.Get);
+            var participantData = fullLeagueMatch.info.participants.FirstOrDefault(o => o.puuid == summoner.PUUID);
 
-            var data = new MatchData
+            var matchData = new MatchData
             {
-                LeagueMatchID = matchData.metadata.matchId,
-                Champion = jack.championName,
-                GameMode = matchData.info.gameMode,
-                Kills = jack.kills,
-                Deaths = jack.deaths,
-                Assists = jack.assists,
-                TimeSpentDead = TimeSpan.FromSeconds(jack.totalTimeSpentDead),
-                Victory = jack.win,
-                MatchStartTimeUTC = GetDateTimeFromInt(matchData.info.gameStartTimestamp),
-                MatchLength = TimeSpan.FromSeconds(matchData.info.gameDuration),
+                LeagueMatchID = fullLeagueMatch.metadata.matchId,
+                SummonerID = summoner.ID,
+                Champion = participantData.championName,
+                GameMode = fullLeagueMatch.info.gameMode,
+                Kills = participantData.kills,
+                Deaths = participantData.deaths,
+                Assists = participantData.assists,
+                TimeSpentDead = TimeSpan.FromSeconds(participantData.totalTimeSpentDead),
+                Victory = participantData.win,
+                MatchStartTimeUTC = GetDateTimeFromInt(fullLeagueMatch.info.gameStartTimestamp),
+                MatchLength = TimeSpan.FromSeconds(fullLeagueMatch.info.gameDuration),
             };
 
-            _context.MatchDatas.Add(data);
-            return new Tuple<int, TimeSpan>(data.Deaths, data.TimeSpentDead);
-        }
-
-        private async Task UpdateGlobalStatistics(int matchDeaths, TimeSpan matchTimeSpentDead, int numMatches)
-        {
-            var existingRec = await _context.GlobalStatistics.FirstOrDefaultAsync(o => o.ID == 1);
-            var recExists = existingRec != null;
-            if (!recExists)
-            {
-                existingRec = new GlobalStatistics
-                {
-                    ID = 1
-                };
-            }
-
-            existingRec.TotalTimeSpentDead += matchTimeSpentDead;
-            existingRec.TotalDeaths += matchDeaths;
-            existingRec.TotalMatchesTracked += numMatches;
-
-            if (recExists)
-                _context.GlobalStatistics.Update(existingRec);
-            else
-                _context.GlobalStatistics.Add(existingRec);
+            _context.MatchDatas.Add(matchData);
+            return new Tuple<int, TimeSpan>(matchData.Deaths, matchData.TimeSpentDead);
         }
 
         private bool DoesMatchExist(string matchID)
@@ -133,34 +160,20 @@ namespace MatchDataRequester
             return date;
         }
 
-        private async Task<LeagueMatchData> GetMatchData(string matchID)
+        private async Task<T> SendAPIRequest<T>(string apiUrl, string headerName, HttpMethod httpMethod)
         {
             var request = new HttpRequestMessage()
             {
-                RequestUri = new Uri($"{FunctionConfigHelper.GetSetting("MatchDataEndpoint")}{matchID}"),
-                Method = HttpMethod.Get
+                RequestUri = new Uri(apiUrl),
+                Method = httpMethod,
             };
-            request.Headers.Add("X-Riot-Token", _apiKey);
+            //request.Headers.Add("X-Riot-Token", _apiKey);
+            request.Headers.Add(headerName, _apiKey);
 
             var response = await _httpClient.SendAsync(request);
-            var data = await response.Content.ReadAsStringAsync();
+            var responseContent = await response.Content.ReadAsStringAsync();
 
-            return JsonSerializer.Deserialize<LeagueMatchData>(data);
-        }
-
-        private async Task<IEnumerable<string>> GetMatchHistory()
-        {
-            var request = new HttpRequestMessage()
-            {
-                RequestUri = new Uri($"{FunctionConfigHelper.GetSetting("MatchHistoryEndpoint")}{FunctionConfigHelper.GetSetting("JackPuuid")}/ids?start=0&count=5"),
-                Method = HttpMethod.Get,
-            };
-            request.Headers.Add("X-Riot-Token", _apiKey);
-
-            var response = await _httpClient.SendAsync(request);
-
-            var txt = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<IEnumerable<string>>(txt);
+            return JsonSerializer.Deserialize<T>(responseContent);
         }
     }
 }
