@@ -16,10 +16,21 @@ namespace WebApp.Services
             _mapper = mapper;
         }
 
-        public async Task<JackMatchesDTO> GetMatchHistory(int numRecsToLoad = 9)
+        public async Task<IEnumerable<SummonerDTO>> GetSummoners()
         {
-            // this will be paginated
+            var summoners = await _context.Summoners.AsNoTracking().Where(o => o.Active).ToListAsync();
+            var mappedSummoners = _mapper.Map<IEnumerable<SummonerDTO>>(summoners);
+
+            return mappedSummoners;
+        }
+
+        public async Task<JackMatchesDTO> GetMatchHistory(int summonerID, int numRecsToLoad = 9)
+        {
+            // todo - improve this low quality method
+            var summoner = await _context.Summoners.FirstOrDefaultAsync(o => o.ID == summonerID);
+
             var fullMatchHistory = await _context.MatchDatas
+                .Where(o => o.SummonerID == summonerID)
                 .Take(numRecsToLoad)
                 .OrderByDescending(o => o.MatchStartTimeUTC)
                 .AsNoTracking()
@@ -27,15 +38,18 @@ namespace WebApp.Services
 
             var oneWeek = DateTime.UtcNow.AddDays(-7);
             var topWorstGames = await _context.MatchDatas
-                .Where(o => o.MatchStartTimeUTC > oneWeek && o.Deaths > o.Kills)
+                .Where(o => o.MatchStartTimeUTC > oneWeek && o.Deaths > o.Kills && o.SummonerID == summonerID)
                 .OrderByDescending(o => o.Deaths)
                 .Take(3)
                 .AsNoTracking()
                 .ToListAsync();
 
-            var fullMatchData = new JackMatchesDTO();
+            var fullMatchData = new JackMatchesDTO
+            {
+                Nickname = summoner.Nickname
+            };
 
-            var statistics = await _context.GlobalStatistics.FirstOrDefaultAsync(o => o.ID == 1);
+            var statistics = await _context.GlobalStatistics.FirstOrDefaultAsync(o => o.SummonerID == summonerID);
             fullMatchData.Statistics = _mapper.Map<GlobalStatisticsDTO>(statistics);
 
             fullMatchData.MatchHistory = _mapper.Map<IEnumerable<MatchDataDTO>>(fullMatchHistory);
