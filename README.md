@@ -12,7 +12,7 @@ By default, in the match history section, the most recent 9 matches are shown. T
 I built this in a few hours, so the code quality is pretty poor. However I might extend it's features, and clean it up a bit in the future.
 
 # Live Site
-You can view it in action at https://isjackbadatlol.azurewebsites.net/
+You can view it in action at https://league-of-feeders.com/
 
 # Tech/Architecture
 Everything is hosted on Azure, with the following:
