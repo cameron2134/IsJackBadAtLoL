@@ -3,10 +3,15 @@
 @{
     hours = (int)((DateTime.UtcNow - Highlight.MatchStartTimeUTC).TotalHours);
 
-        if (hours > 24)
-        {
-            days = hours / 24;
-        }
+    if (hours > 24)
+    {
+        days = hours / 24;
+    }
+
+    else
+    {
+        days = 0;
+    }
 }
 
 <div class="col-md-4">
