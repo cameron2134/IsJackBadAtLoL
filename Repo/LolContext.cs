@@ -12,6 +12,7 @@ namespace Repo
         public DbSet<MatchDataComment> MotionActivities { get; set; }
         public DbSet<GlobalStatistics> GlobalStatistics { get; set; }
         public DbSet<Summoner> Summoners { get; set; }
+        public DbSet<WeeklyFeeder> WeeklyFeeders { get; set; }
 
         public LolContext(DbContextOptions<LolContext> options)
             : base(options)
@@ -66,6 +67,18 @@ namespace Repo
                 entity.ToTable("Summoner", "dbo");
                 entity.HasKey(o => o.ID);
                 entity.Property(o => o.ID).UseIdentityColumn();
+            });
+
+            modelBuilder.Entity<WeeklyFeeder>(entity =>
+            {
+                entity.ToTable("WeeklyFeeder", "dbo");
+                entity.HasKey(o => o.ID);
+                entity.Property(o => o.ID).UseIdentityColumn();
+
+                entity.HasOne(m => m.Summoner)
+                .WithMany(d => d.WeeklyFeeders)
+                .HasForeignKey(f => f.SummonerID)
+                .HasConstraintName("FK_WeeklyFeeder_Summoner");
             });
         }
     }

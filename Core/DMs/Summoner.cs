@@ -16,5 +16,6 @@ namespace Core.DMs
 
         public virtual ICollection<MatchData> MatchDatas { get; set; }
         public virtual ICollection<GlobalStatistics> GlobalStatistics { get; set; }
+        public virtual ICollection<WeeklyFeeder> WeeklyFeeders { get; set; }
     }
 }
