@@ -1,17 +1,7 @@
 ﻿@using Core.DTOs
 
 @{
-    hours = (int)((DateTime.UtcNow - Highlight.MatchStartTimeUTC).TotalHours);
-
-    if (hours > 24)
-    {
-        days = hours / 24;
-    }
-
-    else
-    {
-        days = 0;
-    }
+    var timings = GetTimeConversion();
 }
 
 <div class="col-md-4">
@@ -20,15 +10,7 @@
                                 <div class="d-flex flex-row align-items-center">
                                     <div class="ms-2 c-details">
                                         <h4 class="mb-0">@Highlight.Champion</h4> 
-
-                                        @if (days > 0)
-                                        {
-                                            <span id="daysAgo">@Highlight.GameMode - @days days ago</span>
-                                        }
-                                        else
-                                        {
-                                            <span id="daysAgo">@Highlight.GameMode - @hours hours ago</span>
-                                        }
+                                        <span id="daysAgo">@Highlight.GameMode - @timings.Item1 @timings.Item2 ago</span>
                                     </div>
                                 </div>
                                     @if (Highlight.Victory)
@@ -84,7 +66,25 @@
     [Parameter]
     public string SummonerName { get; set; }
 
-    double timeSpentDead = 0;
-    int hours = 0;
-    int days = 0;
+    private double timeSpentDead = 0;
+
+    private Tuple<int, string> GetTimeConversion()
+    {
+        int hours = (int)((DateTime.UtcNow - Highlight.MatchStartTimeUTC).TotalHours);
+        int days = (int)((DateTime.UtcNow - Highlight.MatchStartTimeUTC).TotalDays);
+        int weeks = days / 7;
+        int months = weeks / 4;
+        int years = months / 12;
+
+        if (days >= 1 && weeks == 0)
+            return new Tuple<int, string>(days, (days > 1) ? "days" : "day");
+        else if (weeks >= 1 && months == 0)
+            return new Tuple<int, string>(weeks, (weeks > 1) ? "weeks" : "week");
+        else if (months >= 1 && years == 0)
+            return new Tuple<int, string>(months, (months > 1) ? "months" : "month");
+        else if (years >= 1)
+            return new Tuple<int, string>(years, (years > 1) ? "years" : "year");
+        else
+            return new Tuple<int, string>(hours, (hours > 1) ? "hours" : "hour");
+    }
 }
