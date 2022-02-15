@@ -23,7 +23,7 @@ else
           <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
                 @foreach (var summoner in _summoners)
                 {
-                    <li><a class="dropdown-item" href="#" @onclick="() => LoadSummonerData(summoner.ID)">@summoner.Nickname</a></li>
+                    <li><a class="dropdown-item" href="" @onclick="() => LoadSummonerData(summoner.ID)">@summoner.Nickname</a></li>
                 }
           </ul>
         </div>
