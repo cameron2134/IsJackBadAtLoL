@@ -21,7 +21,7 @@ namespace MatchDataRequester.Functions
         }
 
         [FunctionName("WeeklyFeederCalculator")]
-        public async Task Run([TimerTrigger("%WeeklyFeederCronSchedule%", RunOnStartup = true)] TimerInfo myTimer, ILogger log)
+        public async Task Run([TimerTrigger("%WeeklyFeederCronSchedule%")] TimerInfo myTimer, ILogger log)
         {
             log.LogInformation($"WeeklyFeederCalculator started at: {DateTime.Now}");
 
