@@ -57,5 +57,15 @@ namespace WebApp.Services
             fullMatchData.Highlights = _mapper.Map<IEnumerable<MatchDataDTO>>(topWorstGames);
             return fullMatchData;
         }
+
+        public async Task<WeeklyFeederDTO> GetWeeklyFeeder()
+        {
+            var weeklyFeeder = await _context.WeeklyFeeders
+                .Include(o => o.Summoner)
+                .OrderByDescending(o => o.CalculationDateUTC)
+                .FirstOrDefaultAsync();
+
+            return _mapper.Map<WeeklyFeederDTO>(weeklyFeeder);
+        }
     }
 }

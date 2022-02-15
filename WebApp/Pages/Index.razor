@@ -1,6 +1,5 @@
 ﻿@page "/"
 
-
 <PageTitle>League of Feeders</PageTitle>
 
 @using Core.DTOs
@@ -34,7 +33,10 @@ else
     <p>@_matchData.Nickname has <span style="font-size:26px;">died</span> a total of <span class="redTxt" style="font-size: 26px;">@_matchData.Statistics.TotalDeaths</span> times...</p>
     <p>...and spent a total of <span class="redTxt" style="font-size:26px;">@_matchData.Statistics.TotalTimeSpentDead.Hours hours and @_matchData.Statistics.TotalTimeSpentDead.Minutes minutes</span>  dead...</p>
 
-        <hr style="width: 35%; margin: auto" />
+    <hr style="width: 35%; margin: auto" />
+
+    <h1 style="margin-top: 25px;">Last week's top feeder was: <b>@_weeklyFeeder.SummonerNickname</b>!</h1>
+    <p>...whose K/D ratio was <span class="redTxt" style="font-size: 26px;">@_weeklyFeeder.TotalKills/@_weeklyFeeder.TotalDeaths</span> for the week</p> 
 
 </div>
         <div class="container mt-5 mb-3">
@@ -65,19 +67,20 @@ else
         <button @onclick="LoadFewerMatches" class="btn btn-primary">Load Fewer</button>
         <button @onclick="LoadMoreMatches" class="btn btn-primary">Load More</button>
     </div>
-
-
     </div>
 }
 
 @code {
     private IEnumerable<SummonerDTO> _summoners;
     private JackMatchesDTO _matchData;
+    private WeeklyFeederDTO _weeklyFeeder;
+
     private int _currentMatchCount = 9;
     private int _currentSummonerID = 1;
 
     protected override async Task OnInitializedAsync()
     {
+        _weeklyFeeder = await _matchDataService.GetWeeklyFeeder();
         _summoners = await _matchDataService.GetSummoners();
         _matchData = await _matchDataService.GetMatchHistory(_currentSummonerID);
     }
