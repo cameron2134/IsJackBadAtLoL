@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Core
+﻿namespace Core
 {
     public class MatchDataComment
     {
@@ -13,6 +7,5 @@ namespace Core
         public string Comment { get; set; }
 
         public virtual MatchData MatchData { get; set; }
-
     }
 }

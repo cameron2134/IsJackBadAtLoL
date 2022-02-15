@@ -19,6 +19,9 @@ namespace WebApp
                 .ReverseMap();
 
             CreateMap<Summoner, SummonerDTO>();
+
+            CreateMap<WeeklyFeeder, WeeklyFeederDTO>()
+                .ForMember(dest => dest.SummonerNickname, opt => opt.MapFrom(src => src.Summoner.Nickname));
         }
     }
 }

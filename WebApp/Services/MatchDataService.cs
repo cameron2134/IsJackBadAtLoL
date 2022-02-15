@@ -38,7 +38,8 @@ namespace WebApp.Services
 
             var oneWeek = DateTime.UtcNow.AddDays(-7);
             var topWorstGames = await _context.MatchDatas
-                .OrderByDescending(o => o.Deaths)
+                .OrderByDescending(o => Math.Abs(o.Deaths - o.Kills))
+                .ThenByDescending(o => o.Deaths)
                 .Where(o => o.MatchStartTimeUTC > oneWeek && o.Deaths > o.Kills && o.SummonerID == summonerID)
                 .Take(3)
                 .AsNoTracking()
@@ -55,6 +56,16 @@ namespace WebApp.Services
             fullMatchData.MatchHistory = _mapper.Map<IEnumerable<MatchDataDTO>>(fullMatchHistory);
             fullMatchData.Highlights = _mapper.Map<IEnumerable<MatchDataDTO>>(topWorstGames);
             return fullMatchData;
+        }
+
+        public async Task<WeeklyFeederDTO> GetWeeklyFeeder()
+        {
+            var weeklyFeeder = await _context.WeeklyFeeders
+                .Include(o => o.Summoner)
+                .OrderByDescending(o => o.CalculationDateUTC)
+                .FirstOrDefaultAsync();
+
+            return _mapper.Map<WeeklyFeederDTO>(weeklyFeeder);
         }
     }
 }

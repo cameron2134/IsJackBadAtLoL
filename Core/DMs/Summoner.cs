@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Core.DMs
+﻿namespace Core.DMs
 {
     public class Summoner
     {
@@ -16,5 +10,6 @@ namespace Core.DMs
 
         public virtual ICollection<MatchData> MatchDatas { get; set; }
         public virtual ICollection<GlobalStatistics> GlobalStatistics { get; set; }
+        public virtual ICollection<WeeklyFeeder> WeeklyFeeders { get; set; }
     }
 }

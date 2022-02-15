@@ -1,5 +1,6 @@
 using Core;
 using Core.DMs;
+using MatchDataRequester;
 using Microsoft.Azure.WebJobs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -11,7 +12,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace MatchDataRequester
+namespace Functions.MatchDataRequester
 {
     public class DataRequestJob
     {
@@ -30,7 +31,7 @@ namespace MatchDataRequester
         }
 
         [FunctionName("DataRequestJob")]
-        public async Task Run([TimerTrigger("%CronSchedule%", RunOnStartup = true)] TimerInfo myTimer)
+        public async Task Run([TimerTrigger("%CronSchedule%")] TimerInfo myTimer)
         {
             _log.LogInformation($"DataRequestJob started at: {DateTime.Now}");
 
