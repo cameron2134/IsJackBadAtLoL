@@ -9,6 +9,13 @@ By default, in the match history section, the most recent 9 matches are shown. T
 
 I built this up pretty quickly and didn't invest a huge amount of time in it, so the code quality isn't amazing. 
 
+# Project Structure
+- Core: Contains the domain models and DTO's shared between the web app and Azure Functions.
+- Database: Contains the full DB schema.
+- MatchDataRequester: Contains the two Azure Functions and associated logic required for them to run.
+- Repo: Pretty much just contains the shared DB context currently.
+- WebApp: The Blazor web application.
+
 # Design
 As mentioned above, this was built pretty quickly so it most certainly wasn't designed to be scalable in any way.
 
@@ -35,3 +42,10 @@ Everything is hosted on Azure, with the following:
   - One that runs every 15 mins, pulling in match data from Riot's API and storing it in the DB
   - Another one that runs once a week, calculating the weekly feeder
 - Blazor web app to provide the UI for the match data
+
+## Azure Resources
+The following Azure resources are in use:
+- The resource group to bunch everything together
+- An App Service with an SSL certificate to host the web application
+- An Azure SQL DB
+- Azure Functions on the Consumption plan
