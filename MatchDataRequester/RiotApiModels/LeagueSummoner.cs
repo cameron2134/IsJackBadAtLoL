@@ -1,4 +1,4 @@
-﻿namespace MatchDataRequester
+﻿namespace MatchDataRequester.RiotApiModels
 {
     public class LeagueSummoner
     {

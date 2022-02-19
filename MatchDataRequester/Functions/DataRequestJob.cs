@@ -1,6 +1,7 @@
 using Core;
 using Core.DMs;
 using MatchDataRequester;
+using MatchDataRequester.RiotApiModels;
 using Microsoft.Azure.WebJobs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
