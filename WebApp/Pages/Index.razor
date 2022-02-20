@@ -7,7 +7,7 @@
 @using WebApp.Services
 @inject MatchDataService _matchDataService
 
-@if (_matchData == null)
+@if (!_dataLoaded)
 {
     <p><em>Data is loading...</em></p>
 }
@@ -27,11 +27,11 @@ else
           </ul>
         </div>
 
-    <h1>Is @_matchData.Nickname bad at LoL?</h1>
+    <h1>Is @_currentSummonerNickname bad at LoL?</h1>
 
-    <p>Based on the past <b><span style="font-size:26px;">@_matchData.Statistics.TotalMatchesTracked</span></b> matches...</p>
-    <p>@_matchData.Nickname has <span style="font-size:26px;">died</span> a total of <span class="redTxt" style="font-size: 26px;">@_matchData.Statistics.TotalDeaths</span> times...</p>
-    <p>...and spent a total of <span class="redTxt" style="font-size:26px;">@_matchData.Statistics.TotalTimeSpentDead.Hours hours and @_matchData.Statistics.TotalTimeSpentDead.Minutes minutes</span>  dead...</p>
+    <p>Based on the past <b><span style="font-size:26px;">@_summonerStatistics.TotalMatchesTracked</span></b> matches...</p>
+    <p>@_currentSummonerNickname has <span style="font-size:26px;">died</span> a total of <span class="redTxt" style="font-size: 26px;">@_summonerStatistics.TotalDeaths</span> times...</p>
+    <p>...and spent a total of <span class="redTxt" style="font-size:26px;">@_summonerStatistics.TotalTimeSpentDead.Hours hours and @_summonerStatistics.TotalTimeSpentDead.Minutes minutes</span>  dead...</p>
 
     <hr style="width: 35%; margin: auto" />
 
@@ -43,11 +43,11 @@ else
 
             <div class="row">
             <h2>Highlight Reel</h2>
-            <h5>@_matchData.Nickname's worst matches for the past week</h5>
+            <h5>@_currentSummonerNickname's worst matches for the past week</h5>
 
-            @foreach (var highlight in _matchData.Highlights)
+            @foreach (var highlight in _weeklyHighlights)
             {
-                <MatchCard SummonerName = "@_matchData.Nickname" Highlight = "highlight"/>
+                <MatchCard SummonerName = "@_currentSummonerNickname" Highlight = "highlight"/>
             }
             </div>
         </div>
@@ -59,9 +59,9 @@ else
 
         <div class="row">
 
-            @foreach (var match in _matchData.MatchHistory) 
+            @foreach (var match in _matchHistory) 
             {
-                <MatchCard SummonerName = "@_matchData.Nickname" Highlight = "match"/>
+                <MatchCard SummonerName = "@_currentSummonerNickname" Highlight = "match"/>
             }
     
         <button @onclick="LoadFewerMatches" class="btn btn-primary">Load Fewer</button>
@@ -72,37 +72,64 @@ else
 
 @code {
     private IEnumerable<SummonerDTO> _summoners;
-    private JackMatchesDTO _matchData;
+    private IEnumerable<MatchDataDTO> _weeklyHighlights;
+
+    private List<MatchDataDTO> _matchHistory;
     private WeeklyFeederDTO _weeklyFeeder;
+    private GlobalStatisticsDTO _summonerStatistics;
+
+    private string _currentSummonerNickname;
 
     private int _currentMatchCount = 9;
     private int _currentSummonerID = 1;
+
+    private bool _dataLoaded = false;
 
     protected override async Task OnInitializedAsync()
     {
         _weeklyFeeder = await _matchDataService.GetWeeklyFeeder();
         _summoners = await _matchDataService.GetSummoners();
-        _matchData = await _matchDataService.GetMatchHistory(_currentSummonerID);
+
+        await RefreshData();
+        _dataLoaded = true;
+    }
+
+    private async Task RefreshData()
+    {
+        var matchHistoryRecs = await _matchDataService.GetMatchHistory(_currentSummonerID);
+        _matchHistory = matchHistoryRecs.ToList();
+
+        _weeklyHighlights = await _matchDataService.GetWeeklyHighlights(_currentSummonerID);
+        _currentSummonerNickname = await _matchDataService.GetSummonerNickname(_currentSummonerID);
+        _summonerStatistics = await _matchDataService.GetOverallStatistics(_currentSummonerID);
+    }
+
+    private async Task LoadMoreMatches()
+    {
+        var totalMatches = await _matchDataService.GetTotalSummonerMatches(_currentSummonerID);
+        if (_currentMatchCount >= totalMatches)
+            return;
+
+        var nextRecordBatch = await _matchDataService.GetMatchHistory(_currentSummonerID, 9, _currentMatchCount);
+        _matchHistory.AddRange(nextRecordBatch);
+
+        _currentMatchCount += 9;
+    }
+
+    private void LoadFewerMatches()
+    {
+        if (_currentMatchCount == 9)
+            return;
+
+        _matchHistory.RemoveRange(_matchHistory.Count - 9, 9);
+        _currentMatchCount -= 9;
     }
 
     private async Task LoadSummonerData(int summonerID)
     {
         _currentSummonerID = summonerID;
-        _matchData = await _matchDataService.GetMatchHistory(_currentSummonerID, _currentMatchCount);
-    }
+        _currentMatchCount = 9;
 
-    private async Task LoadMoreMatches()
-    {
-        _currentMatchCount += 9;
-        _matchData = await _matchDataService.GetMatchHistory(_currentSummonerID, _currentMatchCount);
-    }
-
-    private async Task LoadFewerMatches()
-    {
-        if (_currentMatchCount == 9)
-            return;
-
-        _currentMatchCount -= 9;
-        _matchData = await _matchDataService.GetMatchHistory(_currentSummonerID, _currentMatchCount);
+        await RefreshData();
     }
 }

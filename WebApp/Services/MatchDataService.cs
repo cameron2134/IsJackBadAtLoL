@@ -24,38 +24,49 @@ namespace WebApp.Services
             return mappedSummoners;
         }
 
-        public async Task<JackMatchesDTO> GetMatchHistory(int summonerID, int numRecsToLoad = 9)
+        public async Task<string> GetSummonerNickname(int summonerID)
         {
-            // todo - improve this low quality method
-            var summoner = await _context.Summoners.FirstOrDefaultAsync(o => o.ID == summonerID);
+            var nickname = await _context.Summoners
+                .AsNoTracking()
+                .Select(o => new { o.Nickname, o.ID })
+                .FirstOrDefaultAsync(o => o.ID == summonerID);
 
+            return (nickname != null) ? nickname.Nickname : "N/A";
+        }
+
+        public async Task<IEnumerable<MatchDataDTO>> GetMatchHistory(int summonerID, int numRecsToLoad = 9, int numToSkip = 0)
+        {
             var fullMatchHistory = await _context.MatchDatas
                 .OrderByDescending(o => o.MatchStartTimeUTC)
                 .Where(o => o.SummonerID == summonerID)
+                .Skip(numToSkip)
                 .Take(numRecsToLoad)
                 .AsNoTracking()
                 .ToListAsync();
 
-            var oneWeek = DateTime.UtcNow.AddDays(-7);
+            return _mapper.Map<IEnumerable<MatchDataDTO>>(fullMatchHistory);
+        }
+
+        public async Task<IEnumerable<MatchDataDTO>> GetWeeklyHighlights(int summonerID, int recsToTake = 3, DateTime? startTime = null)
+        {
+            if (startTime == null)
+                startTime = DateTime.UtcNow.AddDays(-7);
+
             var topWorstGames = await _context.MatchDatas
                 .OrderByDescending(o => Math.Abs(o.Deaths - o.Kills))
                 .ThenByDescending(o => o.Deaths)
-                .Where(o => o.MatchStartTimeUTC > oneWeek && o.Deaths > o.Kills && o.SummonerID == summonerID)
-                .Take(3)
+                .Where(o => o.MatchStartTimeUTC > startTime && o.Deaths > o.Kills && o.SummonerID == summonerID)
+                .Take(recsToTake)
                 .AsNoTracking()
                 .ToListAsync();
 
-            var fullMatchData = new JackMatchesDTO
-            {
-                Nickname = summoner.Nickname
-            };
+            return _mapper.Map<IEnumerable<MatchDataDTO>>(topWorstGames);
+        }
 
+        public async Task<GlobalStatisticsDTO> GetOverallStatistics(int summonerID)
+        {
             var statistics = await _context.GlobalStatistics.FirstOrDefaultAsync(o => o.SummonerID == summonerID);
-            fullMatchData.Statistics = _mapper.Map<GlobalStatisticsDTO>(statistics);
-
-            fullMatchData.MatchHistory = _mapper.Map<IEnumerable<MatchDataDTO>>(fullMatchHistory);
-            fullMatchData.Highlights = _mapper.Map<IEnumerable<MatchDataDTO>>(topWorstGames);
-            return fullMatchData;
+            return _mapper.Map<GlobalStatisticsDTO>(statistics);
         }
 
         public async Task<WeeklyFeederDTO> GetWeeklyFeeder()
@@ -66,6 +77,13 @@ namespace WebApp.Services
                 .FirstOrDefaultAsync();
 
             return _mapper.Map<WeeklyFeederDTO>(weeklyFeeder);
+        }
+
+        public async Task<int> GetTotalSummonerMatches(int summonerID)
+        {
+            return await _context.MatchDatas
+                .Where(o => o.SummonerID == summonerID)
+                .CountAsync();
         }
     }
 }
