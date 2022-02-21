@@ -1,6 +1,7 @@
 using Core;
 using Core.DMs;
 using MatchDataRequester;
+using MatchDataRequester.Constants;
 using MatchDataRequester.RiotApiModels;
 using Microsoft.Azure.WebJobs;
 using Microsoft.EntityFrameworkCore;
@@ -128,6 +129,9 @@ namespace Functions.MatchDataRequester
                 return null;
 
             var fullLeagueMatch = await SendAPIRequest<LeagueMatchData>(FunctionConfigHelper.GetSetting("MatchDataEndpoint") + matchID, "X-Riot-Token", HttpMethod.Get);
+            if (fullLeagueMatch.info.gameType != GameTypes.RegularGame)
+                return null;
+
             var participantData = fullLeagueMatch.info.participants.FirstOrDefault(o => o.puuid == summoner.PUUID);
 
             var matchData = new MatchData
