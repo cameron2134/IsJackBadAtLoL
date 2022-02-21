@@ -129,7 +129,9 @@ namespace Functions.MatchDataRequester
                 return null;
 
             var fullLeagueMatch = await SendAPIRequest<LeagueMatchData>(FunctionConfigHelper.GetSetting("MatchDataEndpoint") + matchID, "X-Riot-Token", HttpMethod.Get);
-            if (fullLeagueMatch.info.gameType != GameTypes.RegularGame)
+
+            // Filter out custom games and co-op games (determined where participants is only 5 players)
+            if (fullLeagueMatch.info.gameType != GameTypes.RegularGame || fullLeagueMatch.metadata.participants.Length < 10)
                 return null;
 
             var participantData = fullLeagueMatch.info.participants.FirstOrDefault(o => o.puuid == summoner.PUUID);
