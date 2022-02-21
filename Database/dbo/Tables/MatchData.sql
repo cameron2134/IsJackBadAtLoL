@@ -2,8 +2,8 @@
     [ID]                INT           IDENTITY (1, 1) NOT NULL,
     [SummonerID]        INT           NOT NULL,
     [LeagueMatchID]     VARCHAR (20)  NOT NULL,
+    [MatchTypeID] [int] NOT NULL,
     [Champion]          VARCHAR (100) NOT NULL,
-    [GameMode]          VARCHAR (50)  NOT NULL,
     [Kills]             INT           NOT NULL,
     [Deaths]            INT           NOT NULL,
     [Assists]           INT           NOT NULL,
@@ -15,6 +15,7 @@
     [MatchLength]       TIME (7)      NOT NULL,
     [ImportDateUTC]     DATETIME      NOT NULL,
     CONSTRAINT [PK_MatchData] PRIMARY KEY CLUSTERED ([ID] ASC),
-    CONSTRAINT [FK_MatchData_Summoner] FOREIGN KEY ([SummonerID]) REFERENCES [dbo].[Summoner] ([ID])
+    CONSTRAINT [FK_MatchData_Summoner] FOREIGN KEY ([SummonerID]) REFERENCES [dbo].[Summoner] ([ID]),
+    CONSTRAINT [FK_MatchData_MatchType] FOREIGN KEY ([MatchTypeID]) REFERENCES [dbo].[MatchType] ([ID])
 );
 

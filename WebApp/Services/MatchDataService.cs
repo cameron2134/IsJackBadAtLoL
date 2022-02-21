@@ -37,6 +37,7 @@ namespace WebApp.Services
         public async Task<IEnumerable<MatchDataDTO>> GetMatchHistory(int summonerID, int numRecsToLoad = 9, int numToSkip = 0)
         {
             var fullMatchHistory = await _context.MatchDatas
+                .Include(o => o.MatchType)
                 .OrderByDescending(o => o.MatchStartTimeUTC)
                 .Where(o => o.SummonerID == summonerID)
                 .Skip(numToSkip)
@@ -53,6 +54,7 @@ namespace WebApp.Services
                 startTime = DateTime.UtcNow.AddDays(-7);
 
             var topWorstGames = await _context.MatchDatas
+                .Include(o => o.MatchType)
                 .OrderByDescending(o => Math.Abs(o.Deaths - o.Kills))
                 .ThenByDescending(o => o.Deaths)
                 .Where(o => o.MatchStartTimeUTC > startTime && o.Deaths > o.Kills && o.SummonerID == summonerID)

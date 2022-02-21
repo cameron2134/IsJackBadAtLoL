@@ -13,6 +13,7 @@ namespace Repo
         public DbSet<GlobalStatistics> GlobalStatistics { get; set; }
         public DbSet<Summoner> Summoners { get; set; }
         public DbSet<WeeklyFeeder> WeeklyFeeders { get; set; }
+        public DbSet<Core.DMs.MatchType> MatchType { get; set; }
 
         public LolContext(DbContextOptions<LolContext> options)
             : base(options)
@@ -37,6 +38,11 @@ namespace Repo
                 .WithMany(d => d.MatchDatas)
                 .HasForeignKey(f => f.SummonerID)
                 .HasConstraintName("FK_MatchData_Summoner");
+
+                entity.HasOne(m => m.MatchType)
+                .WithMany(d => d.MatchDatas)
+                .HasForeignKey(f => f.MatchTypeID)
+                .HasConstraintName("FK_MatchData_MatchType");
             });
 
             modelBuilder.Entity<MatchDataComment>(entity =>
@@ -79,6 +85,13 @@ namespace Repo
                 .WithMany(d => d.WeeklyFeeders)
                 .HasForeignKey(f => f.SummonerID)
                 .HasConstraintName("FK_WeeklyFeeder_Summoner");
+            });
+
+            modelBuilder.Entity<Core.DMs.MatchType>(entity =>
+            {
+                entity.ToTable("MatchType", "dbo");
+                entity.HasKey(o => o.ID);
+                entity.Property(o => o.ID).UseIdentityColumn();
             });
         }
     }
