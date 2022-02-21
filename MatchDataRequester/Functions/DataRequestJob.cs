@@ -139,7 +139,7 @@ namespace Functions.MatchDataRequester
                 LeagueMatchID = fullLeagueMatch.metadata.matchId,
                 SummonerID = summoner.ID,
                 Champion = participantData.championName,
-                GameMode = fullLeagueMatch.info.gameMode,
+                MatchTypeID = (int)GetMatchTypeID(fullLeagueMatch.info.gameMode),
                 Kills = participantData.kills,
                 Deaths = participantData.deaths,
                 Assists = participantData.assists,
@@ -173,13 +173,24 @@ namespace Functions.MatchDataRequester
                 RequestUri = new Uri(apiUrl),
                 Method = httpMethod,
             };
-            //request.Headers.Add("X-Riot-Token", _apiKey);
             request.Headers.Add(headerName, _apiKey);
 
             var response = await _httpClient.SendAsync(request);
             var responseContent = await response.Content.ReadAsStringAsync();
 
             return JsonSerializer.Deserialize<T>(responseContent);
+        }
+
+        private MatchTypeEnum GetMatchTypeID(string gameType)
+        {
+            gameType = gameType.ToUpper();
+            return gameType switch
+            {
+                "CLASSIC" => MatchTypeEnum.Classic,
+                "ARAM" => MatchTypeEnum.Aram,
+                "URF" => MatchTypeEnum.Urf,
+                _ => MatchTypeEnum.Classic,
+            };
         }
     }
 }

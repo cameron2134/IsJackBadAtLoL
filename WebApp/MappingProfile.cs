@@ -10,7 +10,7 @@ namespace WebApp
         public MappingProfile()
         {
             CreateMap<MatchData, MatchDataDTO>()
-                .ReverseMap();
+                .ForMember(dest => dest.GameMode, opt => opt.MapFrom(src => src.MatchType.Type));
 
             CreateMap<MatchDataComment, MatchDataCommentDTO>()
                 .ReverseMap();

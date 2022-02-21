@@ -56,5 +56,15 @@
   <Import Condition="'$(SQLDBExtensionsRefPath)' == ''" Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
   <ItemGroup>
     <Folder Include="Properties" />
+    <Folder Include="dbo\Tables" />
+    <Folder Include="dbo" />
+  </ItemGroup>
+  <ItemGroup>
+    <Build Include="dbo\Tables\GlobalStatistics.sql" />
+    <Build Include="dbo\Tables\MatchData.sql" />
+    <Build Include="dbo\Tables\MatchDataComment.sql" />
+    <Build Include="dbo\Tables\Summoner.sql" />
+    <Build Include="dbo\Tables\WeeklyFeeder.sql" />
+    <Build Include="dbo\Tables\MatchType.sql" />
   </ItemGroup>
 </Project>

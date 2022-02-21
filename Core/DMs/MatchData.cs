@@ -7,8 +7,8 @@ namespace Core
         public int ID { get; set; }
         public int SummonerID { get; set; }
         public string LeagueMatchID { get; set; }
+        public int MatchTypeID { get; set; }
         public string Champion { get; set; }
-        public string GameMode { get; set; }
         public int Kills { get; set; }
         public int Deaths { get; set; }
         public int Assists { get; set; }
@@ -22,5 +22,6 @@ namespace Core
 
         public virtual ICollection<MatchDataComment> MatchDataComments { get; set; }
         public virtual Summoner Summoner { get; set; }
+        public virtual DMs.MatchType MatchType { get; set; }
     }
 }
