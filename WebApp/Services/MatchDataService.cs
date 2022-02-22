@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
+using Core;
 using Core.DTOs;
+using Core.Enums;
 using Microsoft.EntityFrameworkCore;
 using Repo;
 
@@ -34,18 +36,23 @@ namespace WebApp.Services
             return (nickname != null) ? nickname.Nickname : "N/A";
         }
 
-        public async Task<IEnumerable<MatchDataDTO>> GetMatchHistory(int summonerID, int numRecsToLoad = 9, int numToSkip = 0)
+        public async Task<IEnumerable<MatchDataDTO>> GetMatchHistory(int summonerID, MatchTypeEnum matchType = MatchTypeEnum.All, int numRecsToLoad = 9, int numToSkip = 0)
         {
-            var fullMatchHistory = await _context.MatchDatas
+            var fullMatchHistory = _context.MatchDatas
                 .Include(o => o.MatchType)
                 .OrderByDescending(o => o.MatchStartTimeUTC)
                 .Where(o => o.SummonerID == summonerID)
-                .Skip(numToSkip)
-                .Take(numRecsToLoad)
-                .AsNoTracking()
-                .ToListAsync();
+                .AsNoTracking();
 
-            return _mapper.Map<IEnumerable<MatchDataDTO>>(fullMatchHistory);
+            if (matchType != MatchTypeEnum.All)
+                fullMatchHistory = fullMatchHistory.Where(o => o.MatchTypeID == (int)matchType);
+
+            fullMatchHistory = fullMatchHistory
+                .Skip(numToSkip)
+                .Take(numRecsToLoad);
+
+            var matchResults = await fullMatchHistory.ToListAsync();
+            return _mapper.Map<IEnumerable<MatchDataDTO>>(matchResults);
         }
 
         public async Task<IEnumerable<MatchDataDTO>> GetWeeklyHighlights(int summonerID, int recsToTake = 3, DateTime? startTime = null)
@@ -81,11 +88,15 @@ namespace WebApp.Services
             return _mapper.Map<WeeklyFeederDTO>(weeklyFeeder);
         }
 
-        public async Task<int> GetTotalSummonerMatches(int summonerID)
+        public async Task<int> GetTotalSummonerMatches(int summonerID, MatchTypeEnum matchTypeFilter = MatchTypeEnum.All)
         {
-            return await _context.MatchDatas
-                .Where(o => o.SummonerID == summonerID)
-                .CountAsync();
+            var query = _context.MatchDatas
+                .Where(o => o.SummonerID == summonerID);
+
+            if (matchTypeFilter != MatchTypeEnum.All)
+                query = query.Where(o => o.MatchTypeID == (int)matchTypeFilter);
+
+            return await query.CountAsync();
         }
     }
 }

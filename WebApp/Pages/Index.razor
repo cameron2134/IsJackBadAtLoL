@@ -3,6 +3,7 @@
 <PageTitle>League of Feeders</PageTitle>
 
 @using Core.DTOs
+@using Core.Enums
 @using WebApp.Components
 @using WebApp.Services
 @inject MatchDataService _matchDataService
@@ -55,7 +56,20 @@ else
         <hr />
 
         <h2>All Matches</h2>
+
+        <div style="margin-bottom: 30px;">
+            <h6>Filter by:</h6>
+
+            <button class="btn btn-secondary @(_currentFilterType == MatchTypeEnum.All ? "filter-btn-active" : "")" type="button" @onclick="() => SetFilterOption(MatchTypeEnum.All)">All</button>
+            <button class="btn btn-secondary @(_currentFilterType == MatchTypeEnum.Classic ? "filter-btn-active" : "")" type="button" @onclick="() => SetFilterOption(MatchTypeEnum.Classic)">Normal</button>
+            <button class="btn btn-secondary @(_currentFilterType == MatchTypeEnum.Aram ? "filter-btn-active" : "")" type="button" @onclick="() => SetFilterOption(MatchTypeEnum.Aram)">ARAM</button>
+            <button class="btn btn-secondary @(_currentFilterType == MatchTypeEnum.Urf ? "filter-btn-active" : "")" type="button" @onclick="() => SetFilterOption(MatchTypeEnum.Urf)">URF</button>
+          </div>
+
         <h5>Showing the most recent @_currentMatchCount matches</h5>
+
+        
+
 
         <div class="row">
 
@@ -85,6 +99,8 @@ else
 
     private bool _dataLoaded = false;
 
+    private MatchTypeEnum _currentFilterType = MatchTypeEnum.All;
+
     protected override async Task OnInitializedAsync()
     {
         _weeklyFeeder = await _matchDataService.GetWeeklyFeeder();
@@ -106,11 +122,11 @@ else
 
     private async Task LoadMoreMatches()
     {
-        var totalMatches = await _matchDataService.GetTotalSummonerMatches(_currentSummonerID);
+        var totalMatches = await _matchDataService.GetTotalSummonerMatches(_currentSummonerID, _currentFilterType);
         if (_currentMatchCount >= totalMatches)
             return;
 
-        var nextRecordBatch = await _matchDataService.GetMatchHistory(_currentSummonerID, 9, _currentMatchCount);
+        var nextRecordBatch = await _matchDataService.GetMatchHistory(_currentSummonerID, _currentFilterType, 9, _currentMatchCount);
         _matchHistory.AddRange(nextRecordBatch);
 
         _currentMatchCount += 9;
@@ -121,15 +137,36 @@ else
         if (_currentMatchCount == 9)
             return;
 
-        _matchHistory.RemoveRange(_matchHistory.Count - 9, 9);
-        _currentMatchCount -= 9;
+        int diff = _matchHistory.Count % 9;
+        if (diff != 0)
+        {
+            _matchHistory.RemoveRange(_matchHistory.Count - diff, diff);
+            _currentMatchCount -= 9;
+        }
+
+        else
+        {
+            _matchHistory.RemoveRange(_matchHistory.Count - 9, 9);
+            _currentMatchCount -= 9;
+        }
     }
 
     private async Task LoadSummonerData(int summonerID)
     {
+        _currentFilterType = MatchTypeEnum.All;
         _currentSummonerID = summonerID;
         _currentMatchCount = 9;
 
         await RefreshData();
+    }
+
+    private async Task SetFilterOption(MatchTypeEnum matchType)
+    {
+        _currentFilterType = matchType;
+
+        var matchHistoryRecs = await _matchDataService.GetMatchHistory(_currentSummonerID, matchType);
+        _matchHistory = matchHistoryRecs.ToList();
+
+        _currentMatchCount = 9;
     }
 }

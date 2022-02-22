@@ -18,6 +18,19 @@ a, .btn-link {
     border-color: #1861ac;
 }
 
+.filter-btn-active {
+    background-color: #7f17ff !important;
+    color: white !important;
+    border-color: #3d0180 !important;
+    border-width: 3px;
+}
+
+/*.btn-secondary:focus {
+    color: red;
+    background-color: blue;
+    border-color: #1861ac;
+}*/
+
 .content {
     padding-top: 1.1rem;
 }
