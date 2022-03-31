@@ -46,6 +46,11 @@ else
             <h2>Highlight Reel</h2>
             <h5>@_currentSummonerNickname's worst matches for the past week</h5>
 
+            @if (!_weeklyHighlights.Any())
+            {
+                <p style="margin-top: 25px;">@_currentSummonerNickname hasn't played enough games this week :(</p>
+            }
+
             @foreach (var highlight in _weeklyHighlights)
             {
                 <MatchCard SummonerName = "@_currentSummonerNickname" Highlight = "highlight"/>
@@ -67,9 +72,6 @@ else
           </div>
 
         <h5>Showing the most recent @_currentMatchCount matches</h5>
-
-        
-
 
         <div class="row">
 
