@@ -43,8 +43,7 @@ namespace MatchDataRequester.Functions
             }
 
             var topFeeder = summonerKillDeaths
-                .OrderByDescending(o => o.Item3)
-                .ThenByDescending(o => Math.Abs(o.Item3 - o.Item2))
+                .OrderByDescending(o => o.Item3 - o.Item2)
                 .FirstOrDefault();
 
             var saveStatus = await AddWeeklyFeeder(topFeeder);
