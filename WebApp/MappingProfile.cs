@@ -16,6 +16,7 @@ namespace WebApp
                 .ReverseMap();
 
             CreateMap<GlobalStatistics, GlobalStatisticsDTO>()
+                .ForMember(dest => dest.TimeSpentDead, opt => opt.MapFrom(src => TimeSpan.FromSeconds(src.SecondsSpentDead)))
                 .ReverseMap();
 
             CreateMap<Summoner, SummonerDTO>();

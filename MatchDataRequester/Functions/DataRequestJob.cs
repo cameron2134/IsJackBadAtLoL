@@ -71,7 +71,9 @@ namespace Functions.MatchDataRequester
 
                     summonerStatistics.TotalMatchesTracked++;
                     summonerStatistics.TotalDeaths += deathData.Item1;
-                    summonerStatistics.TotalTimeSpentDead += deathData.Item2;
+
+                    var totalSeconds = (int)deathData.Item2.TotalSeconds;
+                    summonerStatistics.SecondsSpentDead += totalSeconds;
                 }
             }
             catch (Exception ex)
